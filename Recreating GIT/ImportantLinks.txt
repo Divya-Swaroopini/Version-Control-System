@@ -1,0 +1,12 @@
+Jamboard Link
+
+https://jamboard.google.com/d/1RGKzQvZfqNDKzu4K8BOMJLpr4ZfElf82tEjIfC_LceM/viewer?f=3
+
+File Operations Implementation
+
+https://www.geeksforgeeks.org/tag/golang-file-handling/
+
+Tracking file changes using golang
+
+https://medium.com/@skdomino/watch-this-file-watching-in-go-5b5a247cf71f
+https://pkg.go.dev/github.com/johnsiilver/golib/filewatcher
