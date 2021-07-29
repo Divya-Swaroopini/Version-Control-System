@@ -86,7 +86,6 @@ class DirectoryTree : File {
 
 /*_________________________________________________________________________BST for VERSION CONTROL___________________________________________________________________*/
 
-//default public inheritence?
 class File {
     private:
         //file features can be stored as private objects for now
@@ -99,20 +98,69 @@ class File {
         File *rchild;
         File *parent;
         //technically creates nodes to the file BST's
-        void create_file(int index, int size, File *location) {
-            //assign private variables their values
-            this->index = index;
-            this->size = size;
-            //generate hash value for file being created
-            this->hashValue = generate_hash(location, size);
+        File *create_file(int index, int size, File *location) {
+            if(location == NULL) {
+                //assign private variables their values
+                this->index = index;
+                this->size = size;
+                //generate hash value for file being created
+                this->hashValue = generate_hash(location);
+            }
+
+            //rchild
+            else if(location -> size < size) {
+                location -> rchild = create_file(index, size, location -> rchild);
+                location -> rchild -> parent = location;
+            }
+
+            //lchild
+            else {
+                location -> lchild = create_file(index, size, location -> rchild);
+                location -> lchild -> parent = location;
+            }
         }
 
-        void delete_file(string location) {
-
+        //Clear out file data from BST nodes
+        File *delete_file(string node) {
+            //compute file size()
+            int size = node.size();
+            //Delete BST node
+            if(node == NULL || node->size == size) 
+                return delete_root(node);
+            File *current = node;
+            while(1) {
+                int x = current->size;
+                if(size < x){
+                    if(current->lchild == NULL || current->lchild->size == size) {
+                        current->lchild = delete_root(current->lchild);
+                        break;
+                    }
+                    current = current -> lchild;
+                } 
+                else {
+                    if(current->rchild == NULL || current -> rchild -> size == size) {
+                        current -> rchild = delete_root(current -> rchild);
+                        break;
+                    }
+                    current = current -> rchild;
+                }
+            }
+            return node;
         }
 
-        string generate_hash(File *location, int size) {
-
+        File * delete_root(File * node) {
+            if(!node || node -> size == 0)
+                return NULL;
+            if(node -> rchild == NULL) 
+                return node -> lchild;
+            File * x = node -> rchild;
+            while(x -> lchild)
+                x = x -> lchild;
+            x -> lchild = node -> lchild;
+            return node -> rchild;
         }
 
+        string generate_hash(File *location) {
+            //Write hash function here
+        }
 };
