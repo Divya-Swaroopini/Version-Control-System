@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
+#include <chrono>
 #include <stdlib.h>
 #include <experimental/filesystem>
 #include <fstream>
@@ -11,77 +12,41 @@ namespace filesys = std::experimental::filesystem;
 using namespace std;
 /* _________________________________________________________________________DIRECTORY TREE____________________________________________________________________________*/
 //Search Directory function yet to be implemented
-void product::search(int addr, char k[])
-{
-        int found=0,i;
-        char dummy[10],a[10];
-        i=addr;
-        file.open(shopfile,ios::in|ios::out);
-        do
-        {
-                file.seekg(i*recsize,ios::beg);
-                file.getline(dummy,5,'\n');
-                if(strcmp(dummy,"####")==0)
-                        break;
-                file.seekg(i*recsize,ios::beg);
-                file.getline(key,15,'|');
-                if(strcmp(key,k)==0)
-                {
-                        found=1;
-
-                        file.getline(pname,20,'|');
-                        file.getline(a,10,'|');
-                       price= atoi(a);
-
-                        cout<<"key="<<key<<"\nname="<<pname<<"\nprice="<<price;
-                                break;
-                }
-                else
-                {
-                        i++;
-                        if(i%max==0)
-                                i=0;
-                }
-        }while(i!=addr);
-        if(found==0)
-                cout<<"\n Record Does not exists in hash file\n";
-        file.close();
-        return;
-}
-
-
-
 class DirectoryTree {
     public:
         //Multiple instances of this structure are created to store file details.
         //each instance can be accessed via a vector and an index is used to trace the files
         struct FileData{
             int size;
-            time_t timestamp;
+            std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
             string filename;
-            string type;
+            unsigned char type[4]; //first 512 bytes of a file I guess(magic number)
             File *file;
         };
         int total_no_of_files = 0;
         vector<FileData> new_file;
-
+        string DirName;
         
         //create pointers to child and parent directory
         DirectoryTree *dirParent;
         DirectoryTree *dirChild;
-    
-        DirectoryTree *create_dir(DirectoryTree *node) {
+};
+
+class DirectoryFunctions : DirectoryTree {
+
+    public:
+        DirectoryTree *insert_dir(DirectoryTree *node) {
             //code to create node
             if(node == NULL)
                 //this node will inherit the empty 'files' matrix
                 node = new DirectoryTree;
             else {
-                node -> dirChild = create_dir(node -> dirChild);
+                node -> dirChild = insert_dir(node -> dirChild);
                 node -> dirParent -> dirParent = node;
             }
         }
 
-        DirectoryTree *delete_dir(DirectoryTree *node) {
+        void delete_dir(DirectoryTree *node) {
             //Start at index of directory
             //if directory has a child, take pointer to child, else delete root
             DirectoryTree *TobeDeleted = node;
@@ -98,9 +63,8 @@ class DirectoryTree {
             }
             delete_contents(node);
             //final call to function to delete root
-
         }
-        DirectoryTree *delete_contents(DirectoryTree *node) {
+        void delete_contents(DirectoryTree *node) {
             //delete the directory's file data 
             //after deleting each induvidual file
 
@@ -109,7 +73,7 @@ class DirectoryTree {
 
         }
 
-        DirectoryTree *delete_files(DirectoryTree *node) {
+        void delete_files(DirectoryTree *node) {
             File fobj;
             FileData obj;
             //Send each file of this directory to a function -
@@ -119,43 +83,78 @@ class DirectoryTree {
                 fobj.delete_file(obj.file);
         }
 
-        DirectoryTree *createFilefromDir(DirectoryTree *node) {
+        void createFilefromDir(DirectoryTree *node) {
 
             File fobj;
             fstream stream_obj;
             string fname;
-            cout << "File name? with proper extension plz\n";
-            cin >> fname;
 
-            //additional code needs to be added to check if the file already exists in the system.
-            //Hence search functions need to still be implemented
+            //check if the file already exists in the system before accepting.
+            do{
+                cout << "Enter the filename with a proper file extension.\n";
+                cin >> fname;
+            }while(search_file(node, fname) == true);
+
 
             //Write code to open up the file to a text editor
             stream_obj.open(fname, ios::out);
-            //rest of this code should execute after the person hits ctrl + save
+            //rest of this code should execute after the user hits ctrl + save
 
 
             //find all the file values and assign them to Filedata Structure. 
             //set filename
             new_file[total_no_of_files].filename = fname;
+
             //set file object
             new_file[total_no_of_files].file = &fobj;
-            //some method to retrieve file size
-                //new_file.size = fobj.find_size(file);
+
+            //to retrieve file size
+            ifstream in_file(fname, ios::binary);
+            in_file.seekg(0, ios::end);
+            new_file[total_no_of_files].size = in_file.tellg(); 
+             
             //some method to find file extension ~ magic number
-                //new_file.size = fobj.find_type(file);
-            //some method to set timestamp at time of creation
+            if(in_file.is_open()) {
+                in_file.seekg(0, ios::beg);
+                in_file.read((char*)new_file[total_no_of_files].type, sizeof(new_file[total_no_of_files].type));
+            }
 
             //call create file function the file values;
             fobj.create_file(&fobj, new_file[total_no_of_files].size, &stream_obj);
 
-            //since we have created a new file :
+            //since we have created a new file
             total_no_of_files ++;
         }
 
-        DirectoryTree *modify_contents(DirectoryTree *node) {
-            //modify the contents, so chnage the file table
-            //called from the 'File' class everytime a commit is made
+        bool search_file(DirectoryTree *node, string filename) {
+            for(int i=0; i < node->total_no_of_files; i++) {
+                if(node -> new_file[i].filename == filename){
+                    //printfile Details
+
+                    //compute timestamp
+                    time_t t;
+                    t = std::chrono::system_clock::to_time_t (new_file[i].timestamp);
+
+                    cout << "This file exists:\n" << new_file[i].filename << new_file[i].size << new_file[i].type << ctime(&t);
+                    return true;
+                }
+            }
+            return false;
+        }
+        void open_file(DirectoryTree *node) {
+            //open file in read write mode on some editor
+            //Implement after implementing file watcher
+        }
+
+        //Create root/ navigate to root
+        void root_directory() {
+
+        }
+
+        //meant to check if directory belongs to directory tree and return node pointer
+        DirectoryTree *DirExists(string dirName) {
+        //bfs or dfs search algorithm
+
         }
 };
 
@@ -243,18 +242,117 @@ class File {
 };
 
 
+int main() {
+    //Call the root_directory function to create a root directory and navigate into it if already exists
+
+    //then set all default variables
+    DirectoryFunctions obj;
+    obj.root_directory();
+    DirectoryTree *current_dir = obj.DirExists("root");
+    bool indir = true;
+
+
+    //When terminal app runs, it should automatically begin from this code and display below message.
+    string path = "/root";
+    cout << "\n**************************Application has Started**************************\n";
+    string command="";
+    while(command!="exit") {
+        cout<<path<<"$";
+        cin >> command;
+            //each if-else statement will be a function call to perform a certain task, 
+            //depending on command recieved by user until the user chooses to exit. 
+            //When user exits, terminal app should automatically terminate.
+            if(command == "help") {
+                //List the menu of commands
+            }
+            else if(command[0] == '/') {
+                //user is trying to navigate to a directory, so update path variable
+                string dirName = command.substr(1, command.size());
+                DirectoryTree *dir = obj.DirExists(dirName);
+                if(dir == NULL) 
+                    cout << "The Directory you are trying to enter into does not exist";
+                else {
+                    path = path + '/' + dirName;
+                    indir = true;
+                    current_dir = dir;
+                }
+            }
+            else if(command == "cr dir") {
+                //create a new Directory
+                string tempName;
+                cout << "What will you name this directory?\n";
+                cin >> tempName;
+                if(obj.DirExists(tempName) == NULL) 
+                    cout << "Directory Name already Exists :/";
+                else {
+                    DirectoryTree *newDir;
+                    newDir -> DirName = tempName;
+                    obj.insert_dir(newDir);
+                }
+            }
+            else if(command == "cr file") {
+                //create file
+                //check if in directory
+                if(indir) 
+                    obj.createFilefromDir(current_dir);
+                else
+                    cout << "You must first Navigate into a directory\n";
+            }
+            else if(command == "del file") {
+                //Open file
+            }
+            else if(command == "del dir") {
+
+            }
+            else if(command == "exit")
+                cout << "\nExiting application\n";
+            else 
+                cout << "Invalid Command. To check menu type 'ls -m'.";
+    }
+}
+
+
+/*When System is Initialized : the root Directory must be automatically created if not exists, else user must navigate into root dir by default*/
 
 
 /*
-Flow of content if user needs to create a File (First File in filesystem):
+Flow of program if user needs to create a File:
 
-User gives command to Create Directory:
-Object of type DirectoryTree created -> So root Directory created & vector<Filedata> initialized.
 User must Enter into Directory:
 User must give command to Create File:
 DirectoryTree *createFilefromDir() ->  creates a file with fstream and opens a text editor
 User saves file and exits:
 DirectoryTree *createFilefromDir() -> sets file metaData into vector<Filedata> -> creates a File class object and initializes BST -> calls File *create_file()
 File *create_file() -> saves the address of file into the fstream object of it's class
+
+*/
+
+/*
+Flow of program if user needs to Search for a file:
+
+*User must navigate to a directory to search for file. Search for file must return 'not found' if file is not present in the existing directory.
+Files search function is implemented in DirectoryTree class, cuz file metaData is stored there.
+(No search for directory required to be implemented)*
+
+User types the filename:
+Search takes fileName and searches vector<FileData> for a matching filename. 
+If filename is found return the file metadata, printed out in columns
+Else return not found.
+*/
+
+
+/*Flow of program if a user needs to create a Directory:
+User gives command to Create Directory:
+
+
+*/
+
+/*Flow of program if user needs to delete a directory 
+User gives command to delete Directory:
+
+*/
+
+/*Flow of program if user needs to delete single file
+User gives command to delete file:
 
 */
