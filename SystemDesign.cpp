@@ -141,9 +141,12 @@ class DirectoryFunctions : DirectoryTree {
             }
             return false;
         }
-        void open_file(DirectoryTree *node) {
+ 
+     //pass the filename as the param
+        void open_file(DirectoryTree *node, filename) {
             //open file in read write mode on some editor
             //Implement after implementing file watcher
+         system("gedit filename);
         }
 
         //Create root/ navigate to root
