@@ -157,7 +157,13 @@ class DirectoryFunctions : DirectoryTree {
 
         //Create root/ navigate to root
         void root_directory() {
-
+            if(DirExists("root"))
+                return;
+            else {
+                DirectoryTree *root;
+                root -> DirName = "root";
+                insert_dir(root);
+            }
         }
 
         //meant to check if directory belongs to directory tree and return node pointer
@@ -419,8 +425,10 @@ int main() {
             }
             
             else if(command == "commit file"){
-              
-              
+                string commitFile;
+                cout << "Enter the version name of file you choose to commit";
+                cin >> commitFile;
+            }
              
             else if(command == "exit")
                 cout << "\nExiting application\n";
