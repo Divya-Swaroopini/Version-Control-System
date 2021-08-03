@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <experimental/filesystem>
 #include <fstream>
+#include <bits/stdc++.h>
 
 namespace filesys = std::experimental::filesystem;
  
@@ -157,11 +158,38 @@ class DirectoryFunctions : DirectoryTree {
             }
         }
 
-        //meant to check if directory belongs to directory tree and return node pointer
-        DirectoryTree *DirExists(string dirName) {
-        //bfs or dfs search algorithm
+    //     DirectoryTree *DirExits(DirectoryTree *dirname){
+	//     if (dirname==NULL)
+	// 	    return;
+    //     DirectoryTree *dirname;
+	// // Standard level order traversal code
+	// // using queue
+	//     queue<DirectoryTree *> q; // Create a queue
+	//     q.push(dirname); // Enqueue root
+	//     while (!q.empty())
+	//     {
+	// 	    int n = q.size();
 
+	// 	    // If this node has children
+	// 	    cout << endl; // Print new line between two levels
+    //     }
+    // }
+    void search_dir(string dirname) {
+            //Start at index of directory
+            //if directory has a child, take pointer to child, else delete root
+            DirectoryTree *findnode;
+            if(findnode -> dirChild) {
+                while(findnode->DirName != dirname) {
+                    if(findnode -> dirChild)
+                        findnode = findnode -> dirChild;
+                    else {
+                        findnode = findnode -> dirParent;
+                    }
+                }
+            }
+            //final call to function to delete root
         }
+        
 };
 
 /*_________________________________________________________________________BST for VERSION CONTROL___________________________________________________________________*/
@@ -244,10 +272,7 @@ class File {
 
     
 
-        //search for the BST version - return node* of this version.
-        File *find_version(string name) {
-
-        };
+        
 
 
 
@@ -290,7 +315,10 @@ class File {
             x -> lchild = node -> lchild;
             return node -> rchild;
         }
-};
+        void printCurrentLevel(File *root, int level);
+        int height(File *node);
+        File* newNode(int data);
+
         int height(File *node){
         if (node == NULL)
             return 0;
@@ -308,14 +336,10 @@ class File {
             else {
             return(rheight + 1);
             }
-    }
-}
+            }
+        }
 
-        void printCurrentLevel(File *root, int level);
-        int height(File *node);
-        File* newNode(int data);
-
-        File *searchFileNode(File *root, string filename){
+        File *find_version(File *root, string filename){
             int h = height(root);
             int i;
             for (i = 1; i <= h; i++)
@@ -333,7 +357,10 @@ class File {
                 }
                 
 
-            }
+        }
+};
+
+
 
 int main() {
     //Call the root_directory function to create a root directory and navigate into it if already exists
@@ -427,7 +454,7 @@ int main() {
                 //create a version of an existing file
                 cout << "Enter name of file version from where you choose to branch out\n";
                 cin >> verName;
-                File *node = fobj.find_version(verName);
+                File *node = searchFileNode(&fobj,verName);
                 if (node == NULL)
                     cout << "No such version exists:";
                 else {
