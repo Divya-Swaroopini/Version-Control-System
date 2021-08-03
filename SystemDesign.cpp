@@ -149,10 +149,10 @@ class DirectoryFunctions : DirectoryTree {
         }
  
      //pass the filename as the param
-        void open_file(DirectoryTree *node,string filename) {
+        void open_file(DirectoryTree *node, string filename) {
             //open file in read write mode on some editor
             //Implement after implementing file watcher
-         system(("gedit "+ filename).c_str());
+         system("gedit filename");
         }
 
         //Create root/ navigate to root
@@ -177,6 +177,7 @@ class File {
     public:
         //file features can be stored as private objects for now
         //removed hash value for simplicity sake, since our BST sorting is based on file size
+        string versionName;
         fstream *stream_obj;
         int size;
         int version;
@@ -186,20 +187,38 @@ class File {
         File *parent;
         //technically creates nodes to the file BST's
         //location is a node initialized in the directory class and sent here to be inserted into the BST
+    
         void create_version(string fname, File *node, int version) {
+            //create a version node
             File *new_version;
+    
+            string buffer;
+            fstream org, output;
+            output.open(fname, ios::out);
+            org.open(node->versionName, ios::in);
+            if(fname.is_open()) {
+                while(getline(node->versionName, buffer)) {
+                    output << buffer << '\n';
+                }
+            }
+            org.close(); output.close();
 
-            //Go to location of node pointer and copy file contents into a new location. 
-            //Assign the new location pointer to the stream_obj pointer in the file class
-
-
-            //Assign file size
+            //update version and version name
+            new_version -> version = version ++;
+            new_version -> versionName = fname;
+            
+            //update new version sie
             ifstream in_file(fname, ios::binary);
             in_file.seekg(0, ios::end);
             new_version -> size = in_file.tellg(); 
-            
-            //update version
-            new_version -> version = version ++;
+             
+
+            //inserting version into the BST
+            new_version -> parent = node;
+            if(new_version -> size < node -> size)
+                node->lchild = new_version;
+            else
+                node->rchild = new_version;
 
         }
         File *create_file(File *location, int size, fstream *stream_obj, int version) {
@@ -225,6 +244,14 @@ class File {
                 location -> lchild -> parent = location;
             }
         }
+
+
+        //search for the BST version - return node* of this version.
+        File *find_version(string name) {
+
+        };
+
+
 
         //Clear out file data from BST nodes
         //called from directory class
@@ -332,10 +359,26 @@ int main() {
             else if(command == "del dir") {
 
             }
+            else if(command == "cr ver") {
+                string verName;
+                File fobj;
+                //create a version of an existing file
+                cout << "Enter name of file version from where you choose to branch out\n";
+                cin >> verName;
+                File *node = fobj.find_version(verName);
+                if (node == NULL)
+                    cout << "No such version exists:";
+                else {
+                    cout << "Enter the name of the new version you wish to create\n";
+                    cin >> verName;
+                    fobj.create_version(verName, node, node->version);
+
+                }
+            }
             else if(command == "commit file"){
               cout<<"\n Enter the filename to be commited";
               cin>>commit_file;
-              
+            }
              
             else if(command == "exit")
                 cout << "\nExiting application\n";
