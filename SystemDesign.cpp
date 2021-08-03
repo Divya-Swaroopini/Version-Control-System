@@ -87,7 +87,7 @@ class DirectoryFunctions : DirectoryTree {
             do{
                 cout << "Enter the filename with a proper file extension.\n";
                 cin >> fname;
-            }while(search_file(node, fname) == true);
+            }while(search_file(node, fname) == NULL);
 
 
             //Write code to open up the file to a text editor
@@ -149,7 +149,7 @@ class DirectoryFunctions : DirectoryTree {
 
         //Create root/ navigate to root
         void root_directory() {
-            if(DirExists("root"))
+            if(DirExists("root") != NULL)
                 return;
             else {
                 DirectoryTree *root;
@@ -158,23 +158,7 @@ class DirectoryFunctions : DirectoryTree {
             }
         }
 
-    //     DirectoryTree *DirExits(DirectoryTree *dirname){
-	//     if (dirname==NULL)
-	// 	    return;
-    //     DirectoryTree *dirname;
-	// // Standard level order traversal code
-	// // using queue
-	//     queue<DirectoryTree *> q; // Create a queue
-	//     q.push(dirname); // Enqueue root
-	//     while (!q.empty())
-	//     {
-	// 	    int n = q.size();
-
-	// 	    // If this node has children
-	// 	    cout << endl; // Print new line between two levels
-    //     }
-    // }
-    void search_dir(string dirname) {
+    DirectoryTree *DirExists(string dirname) {
             //Start at index of directory
             //if directory has a child, take pointer to child, else delete root
             DirectoryTree *findnode;
@@ -259,13 +243,13 @@ class File {
 
             //rchild (less than)
             else if(location -> size < size) {
-                location -> rchild = create_file(location -> rchild, size, stream_obj);
+                location -> rchild = create_file(location -> rchild, size, stream_obj, version);
                 location -> rchild -> parent = location;
             }
 
             //lchild (greater than or equal to)
             else {
-                location -> lchild = create_file(location -> rchild, size, stream_obj);
+                location -> lchild = create_file(location -> rchild, size, stream_obj, version);
                 location -> lchild -> parent = location;
             }
         }
@@ -411,6 +395,18 @@ int main() {
                     obj.insert_dir(newDir);
                 }
             }
+            else if(command == "search file") {
+                DirectoryFunctions oobj;
+                string fileName;
+                cout << "File name?\n";
+                cin >> fileName;
+                 //check if in directory
+                if(indir) 
+                    if(oobj.search_file(current_dir, fileName) == NULL) 
+                        cout << "Can't find it\n";
+                else
+                    cout << "You must first Navigate into a directory\n";
+            }
             else if(command == "cr file") {
                 //create file
                 //check if in directory
@@ -454,7 +450,7 @@ int main() {
                 //create a version of an existing file
                 cout << "Enter name of file version from where you choose to branch out\n";
                 cin >> verName;
-                File *node = searchFileNode(&fobj,verName);
+                File *node = fobj.find_version(&fobj,verName);
                 if (node == NULL)
                     cout << "No such version exists:";
                 else {
