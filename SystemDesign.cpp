@@ -318,14 +318,21 @@ class File {
         int height(File *node);
         File* newNode(int data);
 
-        void searchFileNode(File *root, string filename){
+        File *searchFileNode(File *root, string filename){
             int h = height(root);
             int i;
             for (i = 1; i <= h; i++)
                 printCurrentLevel(root, i);
                 if (root->versionName == filename)
                 {
-                    
+                    return root;
+                //     File *filename;
+                //     root->lchild = filename->lchild;
+                //     root->parent = filename->parent;
+                //     root->size = filename->size;
+                //     root->version = filename->version;
+                //     root->versionName = filename->versionName;
+
                 }
                 
 
@@ -412,9 +419,8 @@ int main() {
             }
             
             else if(command == "commit file"){
-              cout<<"\n Enter the filename to be commited";
-              cin>>commit_file;
-            }
+              
+              
              
             else if(command == "exit")
                 cout << "\nExiting application\n";
