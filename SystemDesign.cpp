@@ -18,6 +18,7 @@ class DirectoryTree {
         //each instance can be accessed via a vector and an index is used to trace the files
         struct FileData{
             int size;
+            int version;
             std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
             string filename;
             unsigned char type[4]; //first 512 bytes of a file I guess(magic number)
@@ -83,6 +84,8 @@ class DirectoryFunctions : DirectoryTree {
                 fobj.delete_file(obj.file);
         }
 
+
+        //create new file (Version 0)
         void createFilefromDir(DirectoryTree *node) {
 
             File fobj;
@@ -105,6 +108,9 @@ class DirectoryFunctions : DirectoryTree {
             //set filename
             new_file[total_no_of_files].filename = fname;
 
+             //set version
+            new_file[total_no_of_files].version = 0;
+
             //set file object
             new_file[total_no_of_files].file = &fobj;
 
@@ -120,7 +126,7 @@ class DirectoryFunctions : DirectoryTree {
             }
 
             //call create file function the file values;
-            fobj.create_file(&fobj, new_file[total_no_of_files].size, &stream_obj);
+            fobj.create_file(&fobj, new_file[total_no_of_files].size, &stream_obj, 0);
 
             //since we have created a new file
             total_no_of_files ++;
@@ -165,25 +171,43 @@ class DirectoryFunctions : DirectoryTree {
 2.Modify File
 */
 class File {
-    private:
+    public:
         //file features can be stored as private objects for now
         //removed hash value for simplicity sake, since our BST sorting is based on file size
         fstream *stream_obj;
         int size;
-    public:
+        int version;
         //Implement version control - with BST
         File *lchild;
         File *rchild;
         File *parent;
         //technically creates nodes to the file BST's
         //location is a node initialized in the directory class and sent here to be inserted into the BST
-        File *create_file(File *location, int size, fstream *stream_obj) {
+        void create_version(string fname, File *node, int version) {
+            File *new_version;
+
+            //Go to location of node pointer and copy file contents into a new location. 
+            //Assign the new location pointer to the stream_obj pointer in the file class
+
+
+            //Assign file size
+            ifstream in_file(fname, ios::binary);
+            in_file.seekg(0, ios::end);
+            new_version -> size = in_file.tellg(); 
+            
+            //update version
+            new_version -> version = version ++;
+
+        }
+        File *create_file(File *location, int size, fstream *stream_obj, int version) {
             if(location == NULL) {
                 //assign private variables their values
                 this->stream_obj = stream_obj;
                 //assign stream object pointer to the stream object of the file class.
                 //So pointer to file location is technically just copied
                 this->size = size;
+                //save version number here
+                this->version = version;
             }
 
             //rchild (less than)
