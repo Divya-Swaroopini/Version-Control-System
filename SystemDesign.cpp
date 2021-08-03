@@ -149,10 +149,10 @@ class DirectoryFunctions : DirectoryTree {
         }
  
      //pass the filename as the param
-        void open_file(DirectoryTree *node, filename) {
+        void open_file(DirectoryTree *node, string filename) {
             //open file in read write mode on some editor
             //Implement after implementing file watcher
-         system("gedit filename);
+         system("gedit filename");
         }
 
         //Create root/ navigate to root
@@ -177,6 +177,7 @@ class File {
     public:
         //file features can be stored as private objects for now
         //removed hash value for simplicity sake, since our BST sorting is based on file size
+        string versionName;
         fstream *stream_obj;
         int size;
         int version;
@@ -186,20 +187,31 @@ class File {
         File *parent;
         //technically creates nodes to the file BST's
         //location is a node initialized in the directory class and sent here to be inserted into the BST
-        void create_version(string fname, File *node, int version) {
+        void create_version(string fname, File *node, int version, int size) {
+            //create a version node
             File *new_version;
+    
+            string buffer;
+            fstream org, output;
+            output.open(fname, ios::out);
+            org.open(node->versionName, ios::in);
+            if(fname.is_open()) {
+                while(getline(node->versionName, buffer)) {
+                    output << buffer << '\n';
+                }
+            }
+            org.close(); output.close();
 
-            //Go to location of node pointer and copy file contents into a new location. 
-            //Assign the new location pointer to the stream_obj pointer in the file class
-
-
-            //Assign file size
-            ifstream in_file(fname, ios::binary);
-            in_file.seekg(0, ios::end);
-            new_version -> size = in_file.tellg(); 
-            
-            //update version
+            //update version and version name
             new_version -> version = version ++;
+            new_version -> versionName = fname;
+
+            //inserting version into the BST
+            new_version -> parent = node;
+            if(new_version -> size < node -> size)
+                node->lchild = new_version;
+            else
+                node->rchild = new_version;
 
         }
         File *create_file(File *location, int size, fstream *stream_obj, int version) {
@@ -277,7 +289,7 @@ int main() {
     obj.root_directory();
     DirectoryTree *current_dir = obj.DirExists("root");
     bool indir = true;
-    str commit_file = "";
+    string commit_file = "";
 
 
     //When terminal app runs, it should automatically begin from this code and display below message.
