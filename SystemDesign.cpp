@@ -68,20 +68,10 @@ class DirectoryFunctions : DirectoryTree {
         void delete_contents(DirectoryTree *node) {
             //delete the directory's file data 
             //after deleting each induvidual file
-
-            //calling delete_files, which deletes all files of directory
-            delete_files(node);
-
-        }
-
-        void delete_files(DirectoryTree *node) {
-            File fobj;
-            FileData obj;
-            //Send each file of this directory to a function -
-            //- that deletes induvidual files
-            for(int i = 0; i < obj.size; i++)
-                //assuming the column '0' of dirTables holds pointer to file location on hard disk
-                fobj.delete_file(obj.file);
+            File obj;
+            for(int i=0; i < new_file.size(); i++)
+                obj.delete_file(new_file[i].file);
+            cout << "\nDirectory Contents deleted\n";
         }
 
 
@@ -132,7 +122,8 @@ class DirectoryFunctions : DirectoryTree {
             total_no_of_files ++;
         }
 
-        bool search_file(DirectoryTree *node, string filename) {
+        //Also works like a print file details function
+        File * search_file(DirectoryTree *node, string filename) {
             for(int i=0; i < node->total_no_of_files; i++) {
                 if(node -> new_file[i].filename == filename){
                     //printfile Details
@@ -142,10 +133,10 @@ class DirectoryFunctions : DirectoryTree {
                     t = std::chrono::system_clock::to_time_t (new_file[i].timestamp);
 
                     cout << "This file exists:\n" << new_file[i].filename << new_file[i].size << new_file[i].type << ctime(&t);
-                    return true;
+                    return new_file[i].file;
                 }
             }
-            return false;
+            return NULL;
         }
  
      //pass the filename as the param
@@ -251,6 +242,7 @@ class File {
             }
         }
 
+    
 
         //search for the BST version - return node* of this version.
         File *find_version(string name) {
@@ -285,7 +277,6 @@ class File {
                     current = current -> rchild;
                 }
             }
-            return node;
         }
 
         File * delete_root(File * node) {
@@ -402,10 +393,33 @@ int main() {
                     cout << "You must first Navigate into a directory\n";
             }
             else if(command == "del file") {
-                //Open file
+                File fobj;
+                DirectoryFunctions dobj;
+                string filename;
+                cout << "Enter filename to delete";
+                cin >> filename;
+                //check if in directory
+                if(indir) {
+                    File *node = dobj.search_file(current_dir, filename);
+                    if(node != NULL)
+                        fobj.delete_file(node);
+                    else
+                        cout << "File not found";
+                }
+                else
+                    cout << "You must first Navigate into a directory\n";
+            
             }
             else if(command == "del dir") {
-
+                DirectoryFunctions objdir;
+                string dirName;
+                cout << "Enter directory to be deleted";
+                cin >> dirName;
+                DirectoryTree *dir = objdir.DirExists(dirName);
+                if(dir != NULL) 
+                    objdir.delete_dir(dir);
+                else 
+                    cout << "That directory does not exist";
             }
             else if(command == "cr ver") {
                 string verName;
