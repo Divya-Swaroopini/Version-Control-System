@@ -224,8 +224,8 @@ class File {
             fstream org, output;
             output.open(fname, ios::out);
             org.open(node->versionName, ios::in);
-            if(output.is_open()) {
-                while(getline(node->versionName, buffer)) {
+            if(org.is_open()) {
+                while(std::getline(org, buffer)) {
                     output << buffer << '\n';
                 }
             }
@@ -444,6 +444,7 @@ int main() {
 
                 }
             }
+            
             else if(command == "commit file"){
               
               
