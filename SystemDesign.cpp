@@ -267,7 +267,42 @@ class File {
             return node -> rchild;
         }
 };
+        int height(File *node){
+        if (node == NULL)
+            return 0;
+        else
+            {
+            /* compute the height of each subtree */
+            int lheight = height(node->lchild);
+            int rheight = height(node->rchild);
+ 
+            /* use the larger one */
+            if (lheight > rheight)
+            {
+                return(lheight + 1);
+            }
+            else {
+            return(rheight + 1);
+            }
+    }
+}
 
+        void printCurrentLevel(File *root, int level);
+        int height(File *node);
+        File* newNode(int data);
+
+        void searchFileNode(File *root, string filename){
+            int h = height(root);
+            int i;
+            for (i = 1; i <= h; i++)
+                printCurrentLevel(root, i);
+                if (root->version == filename)
+                {
+                    /* code */
+                }
+                
+
+            }
 
 int main() {
     //Call the root_directory function to create a root directory and navigate into it if already exists
@@ -333,8 +368,7 @@ int main() {
 
             }
             else if(command == "commit file"){
-              cout<<"\n Enter the filename to be commited";
-              cin>>commit_file;
+              
               
              
             else if(command == "exit")
