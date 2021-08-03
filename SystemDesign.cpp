@@ -253,6 +253,7 @@ int main() {
     obj.root_directory();
     DirectoryTree *current_dir = obj.DirExists("root");
     bool indir = true;
+    str commit_file = "";
 
 
     //When terminal app runs, it should automatically begin from this code and display below message.
@@ -307,6 +308,10 @@ int main() {
             else if(command == "del dir") {
 
             }
+            else if(command == "commit file"){
+              cout<<"\n Enter the filename to be commited";
+              cin>>commit_file;
+             
             else if(command == "exit")
                 cout << "\nExiting application\n";
             else 
