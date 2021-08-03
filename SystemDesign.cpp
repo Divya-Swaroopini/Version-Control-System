@@ -191,12 +191,12 @@ class File {
         void create_version(string fname, File *node, int version) {
             //create a version node
             File *new_version;
-    
+            
             string buffer;
             fstream org, output;
             output.open(fname, ios::out);
             org.open(node->versionName, ios::in);
-            if(fname.is_open()) {
+            if(output.is_open()) {
                 while(getline(node->versionName, buffer)) {
                     output << buffer << '\n';
                 }
