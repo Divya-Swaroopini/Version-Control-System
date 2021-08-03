@@ -149,17 +149,10 @@ class DirectoryFunctions : DirectoryTree {
         }
  
      //pass the filename as the param
-<<<<<<< HEAD
-        void open_file(DirectoryTree *node, string filename) {
-            //open file in read write mode on some editor
-            //Implement after implementing file watcher
-         system("gedit filename");
-=======
         void open_file(DirectoryTree *node,string filename) {
             //open file in read write mode on some editor
             //Implement after implementing file watcher
          system(("gedit "+ filename).c_str());
->>>>>>> 140ad56ed4a451607ff4d15d6d3ebabddc91c80c
         }
 
         //Create root/ navigate to root
@@ -184,7 +177,6 @@ class File {
     public:
         //file features can be stored as private objects for now
         //removed hash value for simplicity sake, since our BST sorting is based on file size
-        string versionName;
         fstream *stream_obj;
         int size;
         int version;
@@ -194,31 +186,20 @@ class File {
         File *parent;
         //technically creates nodes to the file BST's
         //location is a node initialized in the directory class and sent here to be inserted into the BST
-        void create_version(string fname, File *node, int version, int size) {
-            //create a version node
+        void create_version(string fname, File *node, int version) {
             File *new_version;
-    
-            string buffer;
-            fstream org, output;
-            output.open(fname, ios::out);
-            org.open(node->versionName, ios::in);
-            if(fname.is_open()) {
-                while(getline(node->versionName, buffer)) {
-                    output << buffer << '\n';
-                }
-            }
-            org.close(); output.close();
 
-            //update version and version name
+            //Go to location of node pointer and copy file contents into a new location. 
+            //Assign the new location pointer to the stream_obj pointer in the file class
+
+
+            //Assign file size
+            ifstream in_file(fname, ios::binary);
+            in_file.seekg(0, ios::end);
+            new_version -> size = in_file.tellg(); 
+            
+            //update version
             new_version -> version = version ++;
-            new_version -> versionName = fname;
-
-            //inserting version into the BST
-            new_version -> parent = node;
-            if(new_version -> size < node -> size)
-                node->lchild = new_version;
-            else
-                node->rchild = new_version;
 
         }
         File *create_file(File *location, int size, fstream *stream_obj, int version) {
