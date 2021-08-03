@@ -196,8 +196,8 @@ class File {
             fstream org, output;
             output.open(fname, ios::out);
             org.open(node->versionName, ios::in);
-            if(output.is_open()) {
-                while(getline(node->versionName, buffer)) {
+            if(org.is_open()) {
+                while(std::getline(org, buffer)) {
                     output << buffer << '\n';
                 }
             }
@@ -410,15 +410,11 @@ int main() {
 
                 }
             }
+            
             else if(command == "commit file"){
-<<<<<<< HEAD
-              
-              
-=======
               cout<<"\n Enter the filename to be commited";
               cin>>commit_file;
             }
->>>>>>> 618e6ed34e209806aa14508580fa55994406ffcb
              
             else if(command == "exit")
                 cout << "\nExiting application\n";
