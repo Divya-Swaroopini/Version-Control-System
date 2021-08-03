@@ -149,10 +149,17 @@ class DirectoryFunctions : DirectoryTree {
         }
  
      //pass the filename as the param
+<<<<<<< HEAD
         void open_file(DirectoryTree *node, string filename) {
             //open file in read write mode on some editor
             //Implement after implementing file watcher
          system("gedit filename");
+=======
+        void open_file(DirectoryTree *node,string filename) {
+            //open file in read write mode on some editor
+            //Implement after implementing file watcher
+         system(("gedit "+ filename).c_str());
+>>>>>>> 140ad56ed4a451607ff4d15d6d3ebabddc91c80c
         }
 
         //Create root/ navigate to root
@@ -347,6 +354,7 @@ int main() {
             else if(command == "commit file"){
               cout<<"\n Enter the filename to be commited";
               cin>>commit_file;
+              
              
             else if(command == "exit")
                 cout << "\nExiting application\n";
