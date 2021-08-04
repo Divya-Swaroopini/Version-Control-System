@@ -173,6 +173,38 @@ class DirectoryFunctions : DirectoryTree {
             }
             //final call to function to delete root
         }
+
+    void commit_file(DirectoryTree *dirnode, string file, string commitName) {
+        //call search file to find existing file
+        File object;
+        File *fnode = search_file(dirnode, file);
+        if(fnode != NULL) {
+            //find the version of file that needs to be committed:
+            File *commit = object.find_version(fnode, commitName);
+            if(commit != NULL)
+                add_file_to_dir(dirnode, fnode, commitName);
+            else
+                cout << "version not found!\n";
+        }
+        else
+            cout << "The file name entered does not exist in directory";
+    }
+
+    void add_file_to_dir(DirectoryTree* node, File* fnode, string commitName) {
+        node -> new_file[total_no_of_files].filename = commitName;
+        node -> new_file[total_no_of_files].file = fnode;
+        node -> new_file[total_no_of_files].size = fnode-> size;
+        node -> new_file[total_no_of_files].version = fnode -> version; 
+
+         //some method to find file extension ~ magic number
+        ifstream in_file(commitName, ios::binary);
+        if(in_file.is_open()) {
+            in_file.seekg(0, ios::beg);
+            in_file.read((char*)node -> new_file[total_no_of_files].type, sizeof(node -> new_file[total_no_of_files].type));
+        }
+
+        total_no_of_files++;
+    }
         
 };
 
@@ -190,6 +222,7 @@ class File {
         fstream *stream_obj;
         int size;
         int version;
+        std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
         //Implement version control - with BST
         File *lchild;
         File *rchild;
@@ -253,12 +286,6 @@ class File {
                 location -> lchild -> parent = location;
             }
         }
-
-    
-
-        
-
-
 
         //Clear out file data from BST nodes
         //called from directory class
@@ -356,6 +383,10 @@ int main() {
     bool indir = true;
     string commit_file = "";
 
+    //create objects to call File and DirectoryFunctions classes
+    DirectoryFunctions dobj;
+    File fobj;
+
 
     //When terminal app runs, it should automatically begin from this code and display below message.
     string path = "/root";
@@ -387,22 +418,21 @@ int main() {
                 string tempName;
                 cout << "What will you name this directory?\n";
                 cin >> tempName;
-                if(obj.DirExists(tempName) == NULL) 
+                if(dobj.DirExists(tempName) == NULL) 
                     cout << "Directory Name already Exists :/";
                 else {
                     DirectoryTree *newDir;
                     newDir -> DirName = tempName;
-                    obj.insert_dir(newDir);
+                    dobj.insert_dir(newDir);
                 }
             }
             else if(command == "search file") {
-                DirectoryFunctions oobj;
                 string fileName;
                 cout << "File name?\n";
                 cin >> fileName;
                  //check if in directory
                 if(indir) 
-                    if(oobj.search_file(current_dir, fileName) == NULL) 
+                    if(dobj.search_file(current_dir, fileName) == NULL) 
                         cout << "Can't find it\n";
                 else
                     cout << "You must first Navigate into a directory\n";
@@ -411,13 +441,11 @@ int main() {
                 //create file
                 //check if in directory
                 if(indir) 
-                    obj.createFilefromDir(current_dir);
+                    dobj.createFilefromDir(current_dir);
                 else
                     cout << "You must first Navigate into a directory\n";
             }
             else if(command == "del file") {
-                File fobj;
-                DirectoryFunctions dobj;
                 string filename;
                 cout << "Enter filename to delete";
                 cin >> filename;
@@ -434,19 +462,17 @@ int main() {
             
             }
             else if(command == "del dir") {
-                DirectoryFunctions objdir;
                 string dirName;
                 cout << "Enter directory to be deleted";
                 cin >> dirName;
-                DirectoryTree *dir = objdir.DirExists(dirName);
+                DirectoryTree *dir = dobj.DirExists(dirName);
                 if(dir != NULL) 
-                    objdir.delete_dir(dir);
+                    dobj.delete_dir(dir);
                 else 
                     cout << "That directory does not exist";
             }
             else if(command == "cr ver") {
                 string verName;
-                File fobj;
                 //create a version of an existing file
                 cout << "Enter name of file version from where you choose to branch out\n";
                 cin >> verName;
@@ -463,8 +489,15 @@ int main() {
             
             else if(command == "commit file"){
                 string commitFile;
-                cout << "Enter the version name of file you choose to commit";
+                string filename;
+                cout << "Enter filename of existing commit\n";
+                cin >> filename;
+                cout << "Enter the version name of file you choose to commit\n";
                 cin >> commitFile;
+                if(filename == commitFile)
+                    cout << "File Version names cannot be the same\n";
+                else
+                    dobj.commit_file(current_dir, filename, commitFile);
             }
              
             else if(command == "exit")
