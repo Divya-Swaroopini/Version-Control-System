@@ -85,7 +85,7 @@ class File {
                 location -> lchild = create_file(location -> rchild, size, stream_obj, version);
                 location -> lchild -> parent = location;
             }
-            return;
+            return NULL;
         }
 
         //Clear out file data from BST nodes
@@ -364,7 +364,7 @@ int main() {
     File fobj;
     bool indir = false;
 
-    //then set all default variables
+    //set up root directory
     //root directory location always stored
     DirectoryTree *root;
     dobj.root_directory(root);
@@ -490,8 +490,10 @@ int main() {
                     dobj.commit_file(current_dir, filename, commitFile);
             }
              
-            else if(command == "exit")
+            else if(command == "exit") {
                 cout << "\nExiting application\n";
+                dobj.delete_dir(root);
+            }
             else 
                 cout << "Invalid Command. To check menu type 'ls -m'.";
     }
