@@ -315,7 +315,7 @@ class DirectoryFunctions : DirectoryTree {
                 else if(root -> dirParent)
                     root = root -> dirParent;
             }
-            
+            return NULL;
         }
 
     void commit_file(DirectoryTree *dirnode, string file, string commitName) {
@@ -497,6 +497,7 @@ int main() {
             else 
                 cout << "Invalid Command. To check menu type 'ls -m'.";
     }
+    return 0;
 }
 
 
