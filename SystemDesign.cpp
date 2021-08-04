@@ -11,6 +11,156 @@
 namespace filesys = std::experimental::filesystem;
  
 using namespace std;
+
+/*_________________________________________________________________________BST for VERSION CONTROL___________________________________________________________________*/
+
+class File {
+    public:
+        //file features can be stored as private objects for now
+        //removed hash value for simplicity sake, since our BST sorting is based on file size
+        string versionName;
+        fstream *stream_obj;
+        int size;
+        int version;
+        std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
+        //Implement version control - with BST
+        File *lchild;
+        File *rchild;
+        File *parent;
+        //technically creates nodes to the file BST's
+        //location is a node initialized in the directory class and sent here to be inserted into the BST
+    
+        void create_version(string fname, File *node, int version) {
+            //create a version node
+            File *new_version;
+            
+            string buffer;
+            fstream org, output;
+            output.open(fname, ios::out);
+            org.open(node->versionName, ios::in);
+            if(org.is_open()) {
+                while(std::getline(org, buffer)) {
+                    output << buffer << '\n';
+                }
+            }
+            org.close(); output.close();
+
+            //update version and version name
+            new_version -> version = version ++;
+            new_version -> versionName = fname;
+            
+            //update new version sie
+            ifstream in_file(fname, ios::binary);
+            in_file.seekg(0, ios::end);
+            new_version -> size = in_file.tellg(); 
+             
+
+            //inserting version into the BST
+            new_version -> parent = node;
+            if(new_version -> size < node -> size)
+                node->lchild = new_version;
+            else
+                node->rchild = new_version;
+
+        }
+        File *create_file(File *location, int size, fstream *stream_obj, int version) {
+            if(location == NULL) {
+                //assign private variables their values
+                this->stream_obj = stream_obj;
+                //assign stream object pointer to the stream object of the file class.
+                //So pointer to file location is technically just copied
+                this->size = size;
+                //save version number here
+                this->version = version;
+            }
+
+            //rchild (less than)
+            else if(location -> size < size) {
+                location -> rchild = create_file(location -> rchild, size, stream_obj, version);
+                location -> rchild -> parent = location;
+            }
+
+            //lchild (greater than or equal to)
+            else {
+                location -> lchild = create_file(location -> rchild, size, stream_obj, version);
+                location -> lchild -> parent = location;
+            }
+            return;
+        }
+
+        //Clear out file data from BST nodes
+        //called from directory class
+        File *delete_file(File *node) {
+            //compute file size()
+            int size;
+            //Delete BST node
+            if(node == NULL || node->size == size) 
+                return delete_root(node);
+            File *current = node;
+            while(1) {
+                int x = current->size;
+                if(size < x){
+                    if(current->lchild == NULL || current->lchild->size == size) {
+                        current->lchild = delete_root(current->lchild);
+                        break;
+                    }
+                    current = current -> lchild;
+                } 
+                else {
+                    if(current->rchild == NULL || current -> rchild -> size == size) {
+                        current -> rchild = delete_root(current -> rchild);
+                        break;
+                    }
+                    current = current -> rchild;
+                }
+            }
+            return NULL;
+        }
+
+        File * delete_root(File * node) {
+            if(!node || node -> size == 0)
+                return NULL;
+            if(node -> rchild == NULL) 
+                return node -> lchild;
+            File * x = node -> rchild;
+            while(x -> lchild)
+                x = x -> lchild;
+            x -> lchild = node -> lchild;
+            return node -> rchild;
+        }
+
+
+        int height(File *node){
+        if (node == NULL)
+            return 0;
+        else
+            {
+            /* compute the height of each subtree */
+            int lheight = height(node->lchild);
+            int rheight = height(node->rchild);
+ 
+            /* use the larger one */
+            if (lheight > rheight)
+            {
+                return(lheight + 1);
+            }
+            else {
+            return(rheight + 1);
+            }
+            }
+        }
+
+        File *find_version(File *node, string filename){
+            int h = height(node);
+            for (int i = 1; i <= h; i++)
+                if (node->versionName == filename)
+                    return node;
+            return NULL;
+        }
+};
+
+
+
 /* _________________________________________________________________________DIRECTORY TREE____________________________________________________________________________*/
 //Search Directory function yet to be implemented
 class DirectoryTree {
@@ -46,6 +196,7 @@ class DirectoryFunctions : DirectoryTree {
                 node -> dirChild = insert_dir(node -> dirChild);
                 node -> dirParent -> dirParent = node;
             }
+            return NULL;
         }
 
         void delete_dir(DirectoryTree *node) {
@@ -124,7 +275,7 @@ class DirectoryFunctions : DirectoryTree {
         }
 
         //Also works like a print file details function
-        File * search_file(DirectoryTree *node, string filename) {
+        File *search_file(DirectoryTree *node, string filename) {
             for(int i=0; i < node->total_no_of_files; i++) {
                 if(node -> new_file[i].filename == filename){
                     //printfile Details
@@ -147,31 +298,24 @@ class DirectoryFunctions : DirectoryTree {
          system(("gedit "+ filename).c_str());
         }
 
-        //Create root/ navigate to root
-        void root_directory() {
-            if(DirExists("root") != NULL)
-                return;
-            else {
-                DirectoryTree *root;
-                root -> DirName = "root";
-                insert_dir(root);
-            }
+        //Create new root and delete any old root nodes from previous complilations
+        void root_directory(DirectoryTree *new_root) {
+            new_root -> DirName = "root";
+            insert_dir(new_root);
         }
 
-    DirectoryTree *DirExists(string dirname) {
+        DirectoryTree *DirExists(DirectoryTree *root, string dirname) {
             //Start at index of directory
             //if directory has a child, take pointer to child, else delete root
-            DirectoryTree *findnode;
-            if(findnode -> dirChild) {
-                while(findnode->DirName != dirname) {
-                    if(findnode -> dirChild)
-                        findnode = findnode -> dirChild;
-                    else {
-                        findnode = findnode -> dirParent;
-                    }
-                }
+            while(1) {
+                if(root-> DirName == dirname)
+                    return root;
+                else if(root -> dirChild)
+                    root = root -> dirChild;
+                else if(root -> dirParent)
+                    root = root -> dirParent;
             }
-            //final call to function to delete root
+            
         }
 
     void commit_file(DirectoryTree *dirnode, string file, string commitName) {
@@ -208,184 +352,30 @@ class DirectoryFunctions : DirectoryTree {
         
 };
 
-/*_________________________________________________________________________BST for VERSION CONTROL___________________________________________________________________*/
 
-/*Left to Implement:
-1.Search File
-2.Modify File
-*/
-class File {
-    public:
-        //file features can be stored as private objects for now
-        //removed hash value for simplicity sake, since our BST sorting is based on file size
-        string versionName;
-        fstream *stream_obj;
-        int size;
-        int version;
-        std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
-        //Implement version control - with BST
-        File *lchild;
-        File *rchild;
-        File *parent;
-        //technically creates nodes to the file BST's
-        //location is a node initialized in the directory class and sent here to be inserted into the BST
-    
-        void create_version(string fname, File *node, int version) {
-            //create a version node
-            File *new_version;
-            
-            string buffer;
-            fstream org, output;
-            output.open(fname, ios::out);
-            org.open(node->versionName, ios::in);
-            if(org.is_open()) {
-                while(std::getline(org, buffer)) {
-                    output << buffer << '\n';
-                }
-            }
-            org.close(); output.close();
-
-            //update version and version name
-            new_version -> version = version ++;
-            new_version -> versionName = fname;
-            
-            //update new version sie
-            ifstream in_file(fname, ios::binary);
-            in_file.seekg(0, ios::end);
-            new_version -> size = in_file.tellg(); 
-             
-
-            //inserting version into the BST
-            new_version -> parent = node;
-            if(new_version -> size < node -> size)
-                node->lchild = new_version;
-            else
-                node->rchild = new_version;
-
-        }
-        File *create_file(File *location, int size, fstream *stream_obj, int version) {
-            if(location == NULL) {
-                //assign private variables their values
-                this->stream_obj = stream_obj;
-                //assign stream object pointer to the stream object of the file class.
-                //So pointer to file location is technically just copied
-                this->size = size;
-                //save version number here
-                this->version = version;
-            }
-
-            //rchild (less than)
-            else if(location -> size < size) {
-                location -> rchild = create_file(location -> rchild, size, stream_obj, version);
-                location -> rchild -> parent = location;
-            }
-
-            //lchild (greater than or equal to)
-            else {
-                location -> lchild = create_file(location -> rchild, size, stream_obj, version);
-                location -> lchild -> parent = location;
-            }
-        }
-
-        //Clear out file data from BST nodes
-        //called from directory class
-        File *delete_file(File *node) {
-            //compute file size()
-            int size;
-            //Delete BST node
-            if(node == NULL || node->size == size) 
-                return delete_root(node);
-            File *current = node;
-            while(1) {
-                int x = current->size;
-                if(size < x){
-                    if(current->lchild == NULL || current->lchild->size == size) {
-                        current->lchild = delete_root(current->lchild);
-                        break;
-                    }
-                    current = current -> lchild;
-                } 
-                else {
-                    if(current->rchild == NULL || current -> rchild -> size == size) {
-                        current -> rchild = delete_root(current -> rchild);
-                        break;
-                    }
-                    current = current -> rchild;
-                }
-            }
-        }
-
-        File * delete_root(File * node) {
-            if(!node || node -> size == 0)
-                return NULL;
-            if(node -> rchild == NULL) 
-                return node -> lchild;
-            File * x = node -> rchild;
-            while(x -> lchild)
-                x = x -> lchild;
-            x -> lchild = node -> lchild;
-            return node -> rchild;
-        }
-        void printCurrentLevel(File *root, int level);
-        int height(File *node);
-        File* newNode(int data);
-
-        int height(File *node){
-        if (node == NULL)
-            return 0;
-        else
-            {
-            /* compute the height of each subtree */
-            int lheight = height(node->lchild);
-            int rheight = height(node->rchild);
- 
-            /* use the larger one */
-            if (lheight > rheight)
-            {
-                return(lheight + 1);
-            }
-            else {
-            return(rheight + 1);
-            }
-            }
-        }
-
-        File *find_version(File *root, string filename){
-            int h = height(root);
-            int i;
-            for (i = 1; i <= h; i++)
-                printCurrentLevel(root, i);
-                if (root->versionName == filename)
-                {
-                    return root;
-                //     File *filename;
-                //     root->lchild = filename->lchild;
-                //     root->parent = filename->parent;
-                //     root->size = filename->size;
-                //     root->version = filename->version;
-                //     root->versionName = filename->versionName;
-
-                }
-                
-
-        }
-};
-
+/***********************************************************************MAIN***************************************************************************/
 
 
 int main() {
     //Call the root_directory function to create a root directory and navigate into it if already exists
 
-    //then set all default variables
-    DirectoryFunctions obj;
-    obj.root_directory();
-    DirectoryTree *current_dir = obj.DirExists("root");
-    bool indir = true;
-    string commit_file = "";
-
     //create objects to call File and DirectoryFunctions classes
     DirectoryFunctions dobj;
     File fobj;
+    bool indir = false;
+
+    //then set all default variables
+    //root directory location always stored
+    DirectoryTree *root;
+    dobj.root_directory(root);
+    DirectoryTree *current_dir = dobj.DirExists(root, "root");
+    if(current_dir != NULL)
+        indir = true;
+    else {
+        cout << "Failed to create root directory";
+        return 0;
+    }
+
 
 
     //When terminal app runs, it should automatically begin from this code and display below message.
@@ -404,7 +394,7 @@ int main() {
             else if(command[0] == '/') {
                 //user is trying to navigate to a directory, so update path variable
                 string dirName = command.substr(1, command.size());
-                DirectoryTree *dir = obj.DirExists(dirName);
+                DirectoryTree *dir = dobj.DirExists(root, dirName);
                 if(dir == NULL) 
                     cout << "The Directory you are trying to enter into does not exist";
                 else {
@@ -418,7 +408,7 @@ int main() {
                 string tempName;
                 cout << "What will you name this directory?\n";
                 cin >> tempName;
-                if(dobj.DirExists(tempName) == NULL) 
+                if(dobj.DirExists(root, tempName) == NULL) 
                     cout << "Directory Name already Exists :/";
                 else {
                     DirectoryTree *newDir;
@@ -465,7 +455,7 @@ int main() {
                 string dirName;
                 cout << "Enter directory to be deleted";
                 cin >> dirName;
-                DirectoryTree *dir = dobj.DirExists(dirName);
+                DirectoryTree *dir = dobj.DirExists(root, dirName);
                 if(dir != NULL) 
                     dobj.delete_dir(dir);
                 else 
