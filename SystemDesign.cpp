@@ -8,6 +8,8 @@
 #include <fstream>
 #include <bits/stdc++.h>
 
+
+
 namespace filesys = std::experimental::filesystem;
  
 using namespace std;
@@ -22,6 +24,7 @@ class File {
         fstream *stream_obj;
         int size;
         int version;
+        File* location;
         std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
         //Implement version control - with BST
         File *lchild;
@@ -33,7 +36,6 @@ class File {
         void create_version(string fname, File *node, int version) {
             //create a version node
             File *new_version;
-            
             string buffer;
             fstream org, output;
             output.open(fname, ios::out);
@@ -42,7 +44,7 @@ class File {
                 while(std::getline(org, buffer)) {
                     output << buffer << '\n';
                 }
-            }
+            } 
             org.close(); output.close();
 
             //update version and version name
@@ -63,7 +65,7 @@ class File {
                 node->rchild = new_version;
 
         }
-        File *create_file(File *location, int size, fstream *stream_obj, int version) {
+        File *insert_file(File *location, int size, fstream *stream_obj, int version) {
             if(location == NULL) {
                 //assign private variables their values
                 this->stream_obj = stream_obj;
@@ -76,16 +78,14 @@ class File {
 
             //rchild (less than)
             else if(location -> size < size) {
-                location -> rchild = create_file(location -> rchild, size, stream_obj, version);
-                location -> rchild -> parent = location;
+                location -> rchild = insert_file(location -> rchild, size, stream_obj, version);
             }
 
             //lchild (greater than or equal to)
             else {
-                location -> lchild = create_file(location -> rchild, size, stream_obj, version);
-                location -> lchild -> parent = location;
+                location -> lchild = insert_file(location -> rchild, size, stream_obj, version);
             }
-            return NULL;
+            return location;
         }
 
         //Clear out file data from BST nodes
@@ -175,7 +175,8 @@ class DirectoryTree {
             unsigned char type[4]; //first 512 bytes of a file I guess(magic number)
             File *file;
         };
-        int total_no_of_files = 0;
+        
+        int total_no_of_files = 1;
         vector<FileData> new_file;
         string DirName;
         
@@ -188,15 +189,14 @@ class DirectoryFunctions : DirectoryTree {
 
     public:
         DirectoryTree *insert_dir(DirectoryTree *node) {
-            //code to create node
-            if(node == NULL)
-                //this node will inherit the empty 'files' matrix
+
+            if (node == NULL)
+                //insert root directory
                 node = new DirectoryTree;
             else {
                 node -> dirChild = insert_dir(node -> dirChild);
-                node -> dirParent -> dirParent = node;
             }
-            return NULL;
+            return node;
         }
 
         void delete_dir(DirectoryTree *node) {
@@ -233,17 +233,38 @@ class DirectoryFunctions : DirectoryTree {
             File fobj;
             fstream stream_obj;
             string fname;
+            int size;
+
+        
+
+            new_file.push_back(FileData());
+            
+            
 
             //check if the file already exists in the system before accepting.
             do{
                 cout << "Enter the filename with a proper file extension.\n";
                 cin >> fname;
-            }while(search_file(node, fname) == NULL);
+            }while(search_file(node, fname) != NULL);
 
 
             //Write code to open up the file to a text editor
             stream_obj.open(fname, ios::out);
             //rest of this code should execute after the user hits ctrl + save
+
+            //to retrieve file size
+            ifstream in_file(fname, ios::binary);
+            in_file.seekg(0, ios::end);
+            size = in_file.tellg(); 
+             
+
+
+            //call create file function the file values;
+            //create new file node
+            File *location = new File;
+            
+    
+            fobj.insert_file(location, size, &stream_obj, 0);
 
 
             //find all the file values and assign them to Filedata Structure. 
@@ -257,18 +278,13 @@ class DirectoryFunctions : DirectoryTree {
             new_file[total_no_of_files].file = &fobj;
 
             //to retrieve file size
-            ifstream in_file(fname, ios::binary);
-            in_file.seekg(0, ios::end);
-            new_file[total_no_of_files].size = in_file.tellg(); 
+            new_file[total_no_of_files].size = size;
              
             //some method to find file extension ~ magic number
             if(in_file.is_open()) {
                 in_file.seekg(0, ios::beg);
                 in_file.read((char*)new_file[total_no_of_files].type, sizeof(new_file[total_no_of_files].type));
             }
-
-            //call create file function the file values;
-            fobj.create_file(&fobj, new_file[total_no_of_files].size, &stream_obj, 0);
 
             //since we have created a new file
             total_no_of_files ++;
@@ -298,24 +314,38 @@ class DirectoryFunctions : DirectoryTree {
          system(("gedit "+ filename).c_str());
         }
 
-        //Create new root and delete any old root nodes from previous complilations
-        void root_directory(DirectoryTree *new_root) {
-            new_root -> DirName = "root";
-            insert_dir(new_root);
-        }
+        DirectoryTree *DirExists(DirectoryTree *root, string dirname, int n) {
+            //Start at the root, push all the nodes into a stack, check the stack until it is empty
+            vector<DirectoryTree*> visited;
+            bool found = false;
+            while(found != true) {
+                //loops ends if either all nodes have been traversed or if found = true
+                if(visited.size() == n)
+                    break;
 
-        DirectoryTree *DirExists(DirectoryTree *root, string dirname) {
-            //Start at index of directory
-            //if directory has a child, take pointer to child, else delete root
-            while(1) {
+                //This part is meant to keep track of the directory elements
+                for(int i=0; i<visited.size(); i++) {
+                    if(root == visited[i])
+                        found = true;
+                }
+                if(found != true)
+                    visited.push_back(root);
+                
+                found = false;
+
+                
+                //This part of the code is for traversing the tree
                 if(root-> DirName == dirname)
-                    return root;
+                    found = true;
                 else if(root -> dirChild)
                     root = root -> dirChild;
                 else if(root -> dirParent)
                     root = root -> dirParent;
             }
-            return NULL;
+            cout << "this function has executed\n";
+            if(found = true) 
+                return root;
+            else return NULL;
         }
 
     void commit_file(DirectoryTree *dirnode, string file, string commitName) {
@@ -363,12 +393,17 @@ int main() {
     DirectoryFunctions dobj;
     File fobj;
     bool indir = false;
+    int total_no_of_dir = 1;
 
     //set up root directory
     //root directory location always stored
-    DirectoryTree *root;
-    dobj.root_directory(root);
-    DirectoryTree *current_dir = dobj.DirExists(root, "root");
+
+    DirectoryTree *root = NULL;
+    root = dobj.insert_dir(root);
+    root -> DirName = "root";
+
+
+    DirectoryTree *current_dir = dobj.DirExists(root, "root", total_no_of_dir);
     if(current_dir != NULL)
         indir = true;
     else {
@@ -391,10 +426,15 @@ int main() {
             if(command == "help") {
                 //List the menu of commands
             }
-            else if(command[0] == '/') {
+            else if(command == "nav") {
+                string dirName = "";
+                cout << "Enter the directory name, to navigate there\n";
                 //user is trying to navigate to a directory, so update path variable
-                string dirName = command.substr(1, command.size());
-                DirectoryTree *dir = dobj.DirExists(root, dirName);
+                cin >> dirName;
+                cout << "Entering directory : " << dirName;
+                
+                DirectoryTree *dir;
+                dir = dobj.DirExists(root, dirName, total_no_of_dir);
                 if(dir == NULL) 
                     cout << "The Directory you are trying to enter into does not exist";
                 else {
@@ -403,20 +443,23 @@ int main() {
                     current_dir = dir;
                 }
             }
-            else if(command == "cr dir") {
+            else if(command == "cr-dir") {
                 //create a new Directory
                 string tempName;
                 cout << "What will you name this directory?\n";
                 cin >> tempName;
-                if(dobj.DirExists(root, tempName) == NULL) 
+                if(dobj.DirExists(root, tempName, total_no_of_dir) == NULL) 
                     cout << "Directory Name already Exists :/";
                 else {
-                    DirectoryTree *newDir;
+                    DirectoryTree *newDir = new DirectoryTree;
+                    newDir = dobj.insert_dir(newDir);
                     newDir -> DirName = tempName;
-                    dobj.insert_dir(newDir);
+                    newDir -> dirParent = current_dir;
+                    cout << "Directory has been created, navigate to it.\n";
+                    ++total_no_of_dir;
                 }
             }
-            else if(command == "search file") {
+            else if(command == "search-file") {
                 string fileName;
                 cout << "File name?\n";
                 cin >> fileName;
@@ -427,7 +470,7 @@ int main() {
                 else
                     cout << "You must first Navigate into a directory\n";
             }
-            else if(command == "cr file") {
+            else if(command == "cr-file") {
                 //create file
                 //check if in directory
                 if(indir) 
@@ -435,7 +478,7 @@ int main() {
                 else
                     cout << "You must first Navigate into a directory\n";
             }
-            else if(command == "del file") {
+            else if(command == "del-file") {
                 string filename;
                 cout << "Enter filename to delete";
                 cin >> filename;
@@ -451,17 +494,17 @@ int main() {
                     cout << "You must first Navigate into a directory\n";
             
             }
-            else if(command == "del dir") {
+            else if(command == "del-dir") {
                 string dirName;
                 cout << "Enter directory to be deleted";
                 cin >> dirName;
-                DirectoryTree *dir = dobj.DirExists(root, dirName);
+                DirectoryTree *dir = dobj.DirExists(root, dirName, total_no_of_dir);
                 if(dir != NULL) 
                     dobj.delete_dir(dir);
                 else 
                     cout << "That directory does not exist";
             }
-            else if(command == "cr ver") {
+            else if(command == "cr-ver") {
                 string verName;
                 //create a version of an existing file
                 cout << "Enter name of file version from where you choose to branch out\n";
@@ -477,7 +520,7 @@ int main() {
                 }
             }
             
-            else if(command == "commit file"){
+            else if(command == "commit-file"){
                 string commitFile;
                 string filename;
                 cout << "Enter filename of existing commit\n";
@@ -493,9 +536,11 @@ int main() {
             else if(command == "exit") {
                 cout << "\nExiting application\n";
                 dobj.delete_dir(root);
+                free(root);
+                free(current_dir);
             }
             else 
-                cout << "Invalid Command. To check menu type 'ls -m'.";
+                cout << "Invalid Command. To check menu type 'help'.\n";
     }
     return 0;
 }
