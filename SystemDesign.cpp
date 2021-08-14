@@ -316,6 +316,7 @@ class DirectoryFunctions : DirectoryTree {
 
         DirectoryTree *DirExists(DirectoryTree *root, string dirname, int n) {
             //Start at the root, push all the nodes into a stack, check the stack until it is empty
+            cout << "checking if Directory exists\n";
             vector<DirectoryTree*> visited;
             bool found = false;
             while(found != true) {
@@ -427,17 +428,16 @@ int main() {
                 //List the menu of commands
             }
             else if(command == "nav") {
-                string dirName = "";
                 cout << "Enter the directory name, to navigate there\n";
                 //user is trying to navigate to a directory, so update path variable
+                string dirName;
                 cin >> dirName;
-                cout << "Entering directory : " << dirName;
                 
-                DirectoryTree *dir;
-                dir = dobj.DirExists(root, dirName, total_no_of_dir);
+                DirectoryTree *dir = dobj.DirExists(root, dirName, total_no_of_dir);
                 if(dir == NULL) 
                     cout << "The Directory you are trying to enter into does not exist";
                 else {
+                    cout << "Entering directory : " << dirName;
                     path = path + '/' + dirName;
                     indir = true;
                     current_dir = dir;
@@ -535,13 +535,13 @@ int main() {
              
             else if(command == "exit") {
                 cout << "\nExiting application\n";
-                dobj.delete_dir(root);
-                free(root);
-                free(current_dir);
             }
             else 
                 cout << "Invalid Command. To check menu type 'help'.\n";
     }
+    dobj.delete_dir(root);
+    free(root);
+    free(current_dir);
     return 0;
 }
 
