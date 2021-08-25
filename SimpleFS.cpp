@@ -215,7 +215,7 @@ int main() {
                     <<"mod: Modify\n Options:\t $f -> modify a file\t"<<endl
                     <<"fnd: Find File"<<endl
                     <<"nav: Navigate to Directory"<<endl
-                    <<"ls:  List all files in this directory"<<endl
+                   // <<"ls:  List all files in this directory"<<endl
                     <<"exit: Exit Application"<<endl;
             }
             else if(command == "crt$d") {
