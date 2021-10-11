@@ -10,3 +10,4 @@ This File Structures Project has the following features:
 -File watcher is used to track file changes
 -Concept of Committing file versions (similar to Git) is implemented
 
+Test
